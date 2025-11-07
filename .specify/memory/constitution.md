@@ -1,50 +1,61 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+- Version change: 0.0.0 → 1.0.0
+- Added Principles:
+  - I. Modular & Testable Code
+  - II. Configuration-Driven
+  - III. Idempotent Indexing
+  - IV. Multi-Strategy Search
+  - V. Test-Driven Development
+- Added Sections:
+  - Technology Stack & Dependencies
+  - Development Workflow
+- Templates requiring updates:
+  - ✅ .specify/templates/plan-template.md (to align with new principles)
+  - ✅ .specify/templates/tasks-template.md (to reflect TDD)
+- Follow-up TODOs: None
+-->
+# Nuclia RAG Kit Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Modular & Testable Code
+All new functionality MUST be organized into separate modules with clear responsibilities (e.g., `indexing.py`, `search.py`, `utils.py`). Every module MUST be independently testable, and core business logic MUST have corresponding unit or integration tests.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Configuration-Driven
+Application settings, especially secrets and environment-specific values (like KB URL and API keys), MUST be managed via environment variables and loaded through a central `config.py` module. No hardcoded credentials or URLs are permitted in the source code.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Idempotent Indexing
+Data ingestion MUST be idempotent. The system MUST detect whether a file has changed before re-indexing it to prevent redundant processing and ensure data consistency. This is achieved by hashing file content/metadata and storing it as a version identifier.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Multi-Strategy Search
+The system MUST support multiple search strategies to address different use cases. This includes, but is not limited to, semantic, full-text (BM25), and hybrid/rank-fused search. New search functionalities should be implemented as distinct functions.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Test-Driven Development (NON-NEGOTIABLE)
+All new features or bug fixes MUST follow a Test-Driven Development (TDD) approach. Tests that replicate the bug or define the new feature MUST be written first and confirmed to fail before implementation begins. The Red-Green-Refactor cycle is mandatory.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Technology Stack & Dependencies
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+The project relies on the following core technologies:
+- **Language**: Python 3.10+
+- **Primary SDK**: `nuclia-sdk`
+- **Configuration**: `python-dotenv` for managing environment variables.
+- **Testing**: `pytest` (assumed, to be formalized).
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Development Workflow
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+1.  **Configuration**: Set up a `.env` file with the required `KB_URL` and `KB_API_KEY`.
+2.  **Data Preparation**: Place documents to be indexed into the `data/` directory.
+3.  **Indexing**: Run `python main.py` to execute the indexing workflow.
+4.  **Testing & Verification**: Use `python main.py [test|semantic|hybrid|compare]` to run predefined search tests and verify the results.
+5.  **Adding Features**: For any new functionality, first add a corresponding test in `tests.py` or a new test file, ensure it fails, and then implement the feature.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution is the source of truth for all development practices within this project. Any deviation requires a formal amendment.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+- **Amendments**: To change this constitution, a developer must open a pull request with the proposed changes, a justification, and an updated Sync Impact Report. The change must be approved by the project maintainer.
+- **Compliance**: All code reviews MUST verify that the changes comply with the principles outlined in this constitution.
+- **Versioning**: The constitution's version MUST be incremented on every change according to Semantic Versioning (MAJOR for breaking changes, MINOR for new principles, PATCH for clarifications).
+
+**Version**: 1.0.0 | **Ratified**: 2025-11-07 | **Last Amended**: 2025-11-07
