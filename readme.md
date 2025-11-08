@@ -23,6 +23,31 @@
 
 # Quickstart
 
+## Streamlit Web UI 🎨
+
+Interactive web interface for chat and search strategy comparison.
+
+**Quick Start:**
+```bash
+# 1. Start the API server (required)
+uvicorn api:app --reload
+
+# 2. In another terminal, launch the web UI
+cd streamlit_app
+streamlit run app.py
+# OR use the launch script:
+./streamlit_app/run.sh
+```
+
+**Features:**
+- 💬 **Chat Interface**: Interactive Q&A with search-powered responses
+- 🔍 **Compare Tool**: Visual strategy comparison (semantic, hybrid, merged)
+- 📊 **Analytics**: Result overlap and quality metrics
+
+**Documentation:** See `streamlit_app/README.md` for detailed usage and configuration.
+
+---
+
 ## API
 
 1.  **Install dependencies**:

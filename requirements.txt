@@ -3,3 +3,6 @@ uvicorn
 click
 python-dotenv
 nuclia
+streamlit>=1.28
+requests>=2.31
+pytest>=7.0
