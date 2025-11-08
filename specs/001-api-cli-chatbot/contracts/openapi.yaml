@@ -1,0 +1,47 @@
+openapi: 3.1.0
+info:
+  title: Nuclia RAG Search API
+  version: 1.0.0
+paths:
+  /search:
+    post:
+      summary: Perform a RAG search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchQuery'
+      responses:
+        '200':
+          description: A list of search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SearchResult'
+        '422':
+          description: Validation error
+components:
+  schemas:
+    SearchQuery:
+      type: object
+      properties:
+        query:
+          type: string
+        search_type:
+          type: string
+          enum: [semantic, hybrid, merged]
+          default: merged
+      required:
+        - query
+    SearchResult:
+      type: object
+      properties:
+        text:
+          type: string
+        score:
+          type: number
+        source:
+          type: string

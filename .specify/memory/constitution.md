@@ -38,7 +38,7 @@ All new features or bug fixes MUST follow a Test-Driven Development (TDD) approa
 
 The project relies on the following core technologies:
 - **Language**: Python 3.10+
-- **Primary SDK**: `nuclia-sdk`
+- **Primary SDK**: `nuclia`
 - **Configuration**: `python-dotenv` for managing environment variables.
 - **Testing**: `pytest` (assumed, to be formalized).
 
