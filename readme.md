@@ -95,8 +95,30 @@ streamlit run app.py
     python main.py upload
     ```
 
-6.  **Run tests**:
-    ```bash
-    python main.py test
-    ```
+## Testing
+
+Run all tests with pytest:
+
+```bash
+# Run all tests
+pytest
+
+# Run specific test files
+pytest tests/test_api.py
+pytest tests/test_cli.py
+pytest tests/test_search.py
+
+# Run with verbose output
+pytest -v
+
+# Run tests in the streamlit app
+cd streamlit_app
+pytest tests/ -v
+```
+
+**Test Coverage:**
+- `tests/test_api.py` - API endpoint tests
+- `tests/test_cli.py` - CLI command tests
+- `tests/test_search.py` - Search functionality tests (semantic, hybrid, merged)
+- `streamlit_app/tests/` - Streamlit app component tests
 
