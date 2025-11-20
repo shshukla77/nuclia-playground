@@ -21,6 +21,99 @@
 
 * Create a chatbot: https://docs.rag.progress.cloud/docs/rag/how-to/chatbot
 
+# Security & Deployment
+
+⚠️ **Important Security Notice**
+
+This application is designed for **local development** and **trusted internal environments**. Before deploying to production or exposing to the internet, implement the following security measures:
+
+## Security Best Practices
+
+### 1. API Authentication
+- **For Production**: Always set the `API_KEY` environment variable to enable authentication
+  ```bash
+  export API_KEY="your-secure-random-api-key"
+  ```
+- API clients must include the key in the `X-API-Key` header:
+  ```bash
+  curl -X POST "https://your-api.com/search" \
+    -H "X-API-Key: your-secure-random-api-key" \
+    -H "Content-Type: application/json" \
+    -d '{"query": "your question"}'
+  ```
+- **For Local Development**: Authentication is disabled by default when `API_KEY` is not set
+
+### 2. Use HTTPS/TLS
+- **Never expose the API over HTTP in production**
+- Use a reverse proxy (nginx, Apache, or cloud load balancer) with TLS certificates
+- Example nginx configuration:
+  ```nginx
+  server {
+      listen 443 ssl;
+      ssl_certificate /path/to/cert.pem;
+      ssl_certificate_key /path/to/key.pem;
+      
+      location / {
+          proxy_pass http://localhost:8000;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+      }
+  }
+  ```
+
+### 3. Network Restrictions
+- **Do not expose the API directly to the public internet**
+- Use firewall rules to restrict access to trusted IP ranges
+- Consider running behind a VPN or private network
+- Use cloud security groups or network policies to limit access
+
+### 4. Reverse Proxy Authentication
+- For additional security, use reverse proxy authentication:
+  - HTTP Basic Auth (nginx, Apache)
+  - OAuth2 Proxy for enterprise SSO integration
+  - Cloud provider authentication (AWS ALB, GCP Load Balancer)
+
+### 5. File Upload Security
+- The application restricts file access to the `data/` directory only
+- Never allow users to specify arbitrary file paths
+- Validate uploaded files before processing
+- Set appropriate file size limits
+
+### 6. Environment Variables
+- **Never commit `.env` files** with secrets to version control
+- Use `.env-example` as a template
+- Store secrets securely (e.g., AWS Secrets Manager, HashiCorp Vault)
+- Rotate API keys regularly
+
+### 7. Error Handling
+- Production API returns generic error messages to clients
+- Detailed errors are logged server-side only
+- Monitor logs for security incidents
+
+## Deployment Checklist
+
+Before deploying to production:
+
+- [ ] Set `API_KEY` environment variable
+- [ ] Enable HTTPS/TLS with valid certificates
+- [ ] Configure firewall/security groups
+- [ ] Set up reverse proxy with authentication
+- [ ] Enable logging and monitoring
+- [ ] Verify `KB_API_KEY` is stored securely
+- [ ] Test API authentication
+- [ ] Review and minimize network exposure
+- [ ] Set up automated security updates
+- [ ] Document incident response procedures
+
+## Local Development
+
+For local development on `localhost`, the default configuration is safe:
+- API authentication is optional (no `API_KEY` required)
+- HTTP is acceptable for localhost
+- Direct API access is convenient for testing
+
+**Remember**: The security measures above are **required** before any production deployment or when handling sensitive data.
+
 # Quickstart
 
 ## Streamlit Web UI 🎨

@@ -1,11 +1,46 @@
 from pathlib import Path
 from nuclia import sdk
 from utils import safe_slug_from_filename, normalize_id, wait_until_processed
+from config import DATA_DIR
+import logging
+
+logger = logging.getLogger(__name__)
 
 try:
     from nucliadb_sdk.v2 import exceptions as ndb_exceptions
 except ImportError:
     ndb_exceptions = None
+
+
+def validate_file_path(path: str) -> Path:
+    """
+    Validate that file path is within DATA_DIR to prevent path traversal.
+    
+    Args:
+        path: File path to validate
+        
+    Returns:
+        Resolved Path object
+        
+    Raises:
+        ValueError: If path is outside DATA_DIR or doesn't exist
+    """
+    file_path = Path(path).resolve()
+    data_dir_resolved = DATA_DIR.resolve()
+    
+    # Check if path is within DATA_DIR
+    try:
+        file_path.relative_to(data_dir_resolved)
+    except ValueError:
+        raise ValueError(f"File path must be within {data_dir_resolved}")
+    
+    if not file_path.exists():
+        raise ValueError(f"File does not exist: {file_path}")
+    
+    if not file_path.is_file():
+        raise ValueError(f"Path is not a file: {file_path}")
+    
+    return file_path
 
 
 async def upsert_file(
@@ -18,7 +53,11 @@ async def upsert_file(
     blank_line_splitter: bool = False,
 ) -> tuple[str, bool]:
     """Upload or update file in Nuclia KB with change detection."""
-    slug = safe_slug_from_filename(path)
+    # Validate file path before processing
+    validated_path = validate_file_path(path)
+    path_str = str(validated_path)
+    
+    slug = safe_slug_from_filename(path_str)
     current_hash = slug
     res_api = sdk.AsyncNucliaResource()
     is_new = False
@@ -40,18 +79,18 @@ async def upsert_file(
 
     except Exception as e:
         if (ndb_exceptions and isinstance(e, ndb_exceptions.NotFoundError)) or "Resource does not exist" in str(e):
-            resource = await res_api.create(title=Path(path).name, slug=slug)
+            resource = await res_api.create(title=Path(path_str).name, slug=slug)
             rid = normalize_id(resource)
             is_new = True
         else:
             raise
 
     uploader = sdk.AsyncNucliaUpload()
-    file_ext = Path(path).suffix.lower()
+    file_ext = Path(path_str).suffix.lower()
     mimetype = "application/pdf" if file_ext == ".pdf" else None
 
     upload_kwargs = {
-        "path": path,
+        "path": path_str,
         "rid": rid,
         "extra": {"metadata": {"language": language}},
         "interpretTables": interpret_tables,
