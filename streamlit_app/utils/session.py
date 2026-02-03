@@ -163,7 +163,10 @@ def cache_comparison_results(
     results: Dict[str, List[Dict[str, Any]]]
 ) -> None:
     """
-    Cache comparison results for a query.
+    Cache comparison results for a query with LRU eviction.
+    
+    Maintains a maximum of 20 cached queries. When limit is reached,
+    removes the oldest cached entry.
     
     Args:
         query: The search query
@@ -177,6 +180,15 @@ def cache_comparison_results(
         ... }
         >>> cache_comparison_results("RAG", results)
     """
+    MAX_CACHE_SIZE = 20
+    
+    # Remove oldest entry if at capacity
+    if len(st.session_state.comparison_results) >= MAX_CACHE_SIZE:
+        if query not in st.session_state.comparison_results:
+            # Remove first (oldest) key
+            oldest_key = next(iter(st.session_state.comparison_results))
+            del st.session_state.comparison_results[oldest_key]
+    
     st.session_state.comparison_results[query] = results
 
 

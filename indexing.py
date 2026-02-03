@@ -79,7 +79,9 @@ async def upload_folder(
     wait: bool = False,
     split_strategy: str = "PARAGRAPH",
 ) -> dict[str, tuple[str, str]]:
-    """Upload all PDFs from folder."""
+    """Upload all PDFs from folder in parallel."""
+    import asyncio
+    
     if not data_dir.exists():
         raise FileNotFoundError(f"Data directory not found: {data_dir}")
 
@@ -90,8 +92,9 @@ async def upload_folder(
         print(f"No PDF files found in {data_dir}")
         return results
 
-    for pdf_file in pdf_files:
-        rid, is_new = await upsert_file(
+    # Create tasks for parallel processing
+    tasks = [
+        upsert_file(
             path=str(pdf_file),
             wait=wait,
             language="en",
@@ -99,6 +102,14 @@ async def upload_folder(
             blank_line_splitter=False,
             split_strategy=split_strategy,
         )
+        for pdf_file in pdf_files
+    ]
+    
+    # Execute all uploads in parallel
+    upload_results = await asyncio.gather(*tasks)
+    
+    # Process results
+    for pdf_file, (rid, is_new) in zip(pdf_files, upload_results):
         status = "Uploaded" if is_new else "Already indexed"
         results[pdf_file.name] = (rid, status)
         print(f"{status}: {pdf_file.name} → {rid}")

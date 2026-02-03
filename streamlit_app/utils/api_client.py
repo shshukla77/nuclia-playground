@@ -5,7 +5,8 @@ This module provides the SearchAPIClient class for executing search queries
 against the backend API with comprehensive error handling and validation.
 """
 import os
-import requests
+import asyncio
+import httpx
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 
@@ -25,7 +26,7 @@ class SearchAPIClient:
     
     Example:
         >>> client = SearchAPIClient("http://localhost:8000")
-        >>> results = client.search("What is RAG?", "semantic")
+        >>> results = await client.search("What is RAG?", "semantic")
         >>> print(len(results))
         5
     """
@@ -40,14 +41,27 @@ class SearchAPIClient:
         """
         self.base_url = base_url.rstrip('/')
         self.timeout = timeout
+        self._client = None
     
-    def search(
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Get or create the async HTTP client."""
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=self.timeout)
+        return self._client
+    
+    async def close(self):
+        """Close the HTTP client."""
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
+    
+    async def search(
         self, 
         query: str, 
         search_type: str = "merged"
     ) -> List[Dict[str, Any]]:
         """
-        Execute a search query against the API.
+        Execute a search query against the API asynchronously.
         
         Args:
             query: Search query string (non-empty)
@@ -61,12 +75,12 @@ class SearchAPIClient:
             
         Raises:
             ValueError: If query is empty or search_type is invalid
-            requests.ConnectionError: If API server is unreachable
-            requests.Timeout: If request exceeds timeout limit
-            requests.HTTPError: If API returns error status (4xx, 5xx)
+            httpx.ConnectError: If API server is unreachable
+            httpx.TimeoutException: If request exceeds timeout limit
+            httpx.HTTPStatusError: If API returns error status (4xx, 5xx)
             
         Example:
-            >>> results = client.search("machine learning", "semantic")
+            >>> results = await client.search("machine learning", "semantic")
             >>> for result in results[:3]:
             ...     print(f"{result['score']:.2f}: {result['text'][:50]}")
             0.89: Machine learning is a subset of artificial...
@@ -91,11 +105,11 @@ class SearchAPIClient:
             "search_type": search_type
         }
         
-        # Execute request
-        response = requests.post(
+        # Execute request asynchronously
+        client = await self._get_client()
+        response = await client.post(
             f"{self.base_url}/search",
-            json=payload,
-            timeout=self.timeout
+            json=payload
         )
         
         # Raise exception for error status codes
@@ -104,7 +118,7 @@ class SearchAPIClient:
         # Return results
         return response.json()
     
-    def health_check(self) -> bool:
+    async def health_check(self) -> bool:
         """
         Check if the API server is reachable and responding.
         
@@ -115,18 +129,16 @@ class SearchAPIClient:
             True if server responds with 200 status, False otherwise
             
         Example:
-            >>> if client.health_check():
+            >>> if await client.health_check():
             ...     print("API is healthy")
             ... else:
             ...     print("API is unavailable")
             API is healthy
         """
         try:
-            response = requests.get(
-                f"{self.base_url}/docs",
-                timeout=5
-            )
-            return response.status_code == 200
+            async with httpx.AsyncClient(timeout=5) as client:
+                response = await client.get(f"{self.base_url}/docs")
+                return response.status_code == 200
         except Exception:
             # Any exception means server is not healthy
             return False
@@ -148,13 +160,13 @@ def get_default_client() -> SearchAPIClient:
     return SearchAPIClient(API_BASE_URL, API_TIMEOUT)
 
 
-def safe_search(
+async def safe_search(
     client: SearchAPIClient,
     query: str,
     strategy: str = "merged"
 ) -> Dict[str, Any]:
     """
-    Execute search with comprehensive error handling.
+    Execute search with comprehensive error handling (async).
     
     This is a convenience function that wraps client.search() with
     error handling, returning a structured response dictionary.
@@ -172,7 +184,7 @@ def safe_search(
             
     Example:
         >>> client = get_default_client()
-        >>> response = safe_search(client, "RAG architecture", "semantic")
+        >>> response = await safe_search(client, "RAG architecture", "semantic")
         >>> if response["success"]:
         ...     print(f"Found {len(response['results'])} results")
         ... else:
@@ -180,7 +192,7 @@ def safe_search(
         Found 5 results
     """
     try:
-        results = client.search(query, strategy)
+        results = await client.search(query, strategy)
         return {
             "success": True,
             "results": results,
@@ -193,7 +205,7 @@ def safe_search(
             "results": [],
             "error": f"Validation error: {str(e)}"
         }
-    except requests.ConnectionError:
+    except httpx.ConnectError:
         # API server not reachable
         return {
             "success": False,
@@ -203,14 +215,14 @@ def safe_search(
                 f"Please ensure the API server is running at {client.base_url}."
             )
         }
-    except requests.Timeout:
+    except httpx.TimeoutException:
         # Request timed out
         return {
             "success": False,
             "results": [],
             "error": "Search request timed out. Please try again."
         }
-    except requests.HTTPError as e:
+    except httpx.HTTPStatusError as e:
         # API returned error status (4xx, 5xx)
         try:
             error_detail = e.response.json().get("detail", str(e))
