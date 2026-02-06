@@ -200,6 +200,7 @@ pytest
 pytest tests/test_api.py
 pytest tests/test_cli.py
 pytest tests/test_search.py
+pytest tests/test_security.py
 
 # Run with verbose output
 pytest -v
@@ -213,5 +214,6 @@ pytest tests/ -v
 - `tests/test_api.py` - API endpoint tests
 - `tests/test_cli.py` - CLI command tests
 - `tests/test_search.py` - Search functionality tests (semantic, hybrid, merged)
+- `tests/test_security.py` - Security tests (authentication, path validation, error handling)
 - `streamlit_app/tests/` - Streamlit app component tests
 

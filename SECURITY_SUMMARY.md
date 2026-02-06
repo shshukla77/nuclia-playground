@@ -4,7 +4,8 @@
 This document summarizes the security improvements implemented for the Nuclia Playground project in response to the Security Hardening Checklist (Issue #X).
 
 ## Implementation Date
-November 20, 2025
+November 20, 2025 (Initial implementation)
+February 6, 2026 (Dependency pinning and FastAPI lifespan migration)
 
 ## Changes Implemented
 
@@ -117,6 +118,43 @@ validate_file_path("/etc/passwd")        # ✗ Rejected
 
 **Total:** 12 comprehensive security tests, all passing
 
+### 8. Dependency Version Pinning ✅
+**Location:** `requirements.txt`
+
+**Changes:**
+- Pinned all dependency versions to specific releases
+- Updated from loose version constraints to exact versions:
+  - `fastapi==0.128.2` (was `fastapi`)
+  - `uvicorn==0.40.0` (was `uvicorn`)
+  - `click==8.1.6` (was `click`)
+  - `python-dotenv==1.2.1` (was `python-dotenv`)
+  - `nuclia==4.9.17` (was `nuclia`)
+  - `streamlit==1.54.0` (was `streamlit>=1.28`)
+  - `requests==2.31.0` (was `requests>=2.31`)
+  - `pytest==8.4.2` (was `pytest>=7.0`)
+- Added `pytest-asyncio==0.25.2` for async test support
+
+**Security Benefit:** 
+- Prevents accidental installation of vulnerable or incompatible versions
+- Ensures reproducible builds across environments
+- Reduces supply chain attack surface
+- Enables security auditing of exact dependency versions
+
+### 9. FastAPI Lifespan Migration ✅
+**Location:** `api.py`
+
+**Changes:**
+- Migrated from deprecated `@app.on_event("startup")` to modern `lifespan` context manager
+- Implemented `asynccontextmanager` for proper resource lifecycle management
+- Added startup and shutdown event handling
+- Removed deprecation warnings
+
+**Security Benefit:** 
+- Uses current best practices for resource management
+- Ensures proper cleanup on shutdown
+- Reduces technical debt and future maintenance burden
+- Follows FastAPI security recommendations
+
 ## Verification Results
 
 ### Manual Testing
@@ -130,13 +168,15 @@ validate_file_path("/etc/passwd")        # ✗ Rejected
 - ✅ 12/12 security tests passing
 - ✅ All existing functionality tests compatible
 - ✅ No regression issues detected
+- ✅ pytest-asyncio support added for async tests
 
 ### Security Scanning
-- ✅ CodeQL analysis: 0 vulnerabilities detected
+- ✅ CodeQL analysis: 0 vulnerabilities detected (February 6, 2026)
 - ✅ No secrets in code
 - ✅ No hard-coded credentials
 - ✅ No SQL injection risks
 - ✅ No path traversal vulnerabilities
+- ✅ No dependency vulnerabilities in pinned versions
 
 ## Backward Compatibility
 
