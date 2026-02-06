@@ -1,4 +1,5 @@
 from typing import List, Optional
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, status, Security, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
@@ -11,7 +12,25 @@ from config import get_kb_client
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize resources on startup and cleanup on shutdown."""
+    # Startup: Initialize KB client
+    try:
+        get_kb_client()
+        logger.info("API startup complete")
+    except ValueError as e:
+        logger.error(f"Failed to initialize KB client: {e}")
+        raise
+    
+    yield
+    
+    # Shutdown: cleanup if needed
+    logger.info("API shutdown")
+
+
+app = FastAPI(lifespan=lifespan)
 
 # API Key authentication (optional, for production deployment)
 API_KEY_NAME = "X-API-Key"
@@ -40,17 +59,6 @@ def get_api_key(api_key: str = Security(api_key_header)) -> str:
         )
     
     return api_key
-
-# Initialize KB client on startup
-@app.on_event("startup")
-async def startup_event():
-    """Initialize Nuclia KB client on application startup."""
-    try:
-        get_kb_client()
-        logger.info("API startup complete")
-    except ValueError as e:
-        logger.error(f"Failed to initialize KB client: {e}")
-        raise
 
 # Generic error handler to prevent information leakage
 @app.exception_handler(Exception)
